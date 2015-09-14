@@ -1,0 +1,146 @@
+%% Lambda Calculus to Lazy K translator (2015 zk_phi)
+
+%% [syntax]
+%%
+%%  M := X '->' M  ... abstraction (right associative)
+%%     | M '@' M   ... application (left associative)
+
+%% [compiling lambda terms to Lazy K]
+%%
+%% ?- compile(x -> y -> y @ x).
+%% ``s`k`sik
+%% true.
+
+%% [defining/calling macros]
+%%
+%% ?- define(twice, f -> x -> f @ (f @ x)).
+%% true.
+%%
+%% ?- compile(twice @ (x -> x) @ (x -> y -> y @ x)).
+%% ````s``s`kskii``s`k`sik
+%% true.
+
+%% [predefined macros]
+%%
+%% - boolean : true, false, if, not, and, or, xor
+%% - list    : nil, cons, car, cdr, null, nthcdr, nth, map, append, reverse
+%% - numeric : zero, succ, pred, add, sub, mult, exp, zerop, ge, gt, eq, neq, le, lt, mod, div
+%% - others  : fix [= Y combinator], compose, int_to_str
+
+%% [syntactic sugars]
+%%
+%% - list notation   : [M1, M2, ...] = cons @ M1 @ (cons @ M2 @ ... nil)
+%% - natural numbers : 4 = succ @ (succ @ (succ @ (succ @ zero)))
+%% - strings         : "abc" = [97, 98, 99]
+
+%% [example1 : Hello World]
+%%
+%% ?- compile(k @ (reverse @ "!dlroW ,olleH")).
+
+%% [example2 : Lazy K solution for Project Euler #001]
+%%
+%% ?- define(thirty_seven, succ @ (exp @ (mult @ 2 @ 3) @ 2)). % equals to 37 but optimized in code size
+%% ?- define(limit, mult @ thirty_seven @ ((x -> x @ x) @ 3)). % equals to 999 "
+%% ?- define(solve_1, x -> if @ (zerop @ (mult @ (mod @ x @ 3) @ (mod @ x @ 5))) @ x @ 0).
+%% ?- define(solve, fix @ (f -> x -> if @ (zerop @ x) @ 0 @ (add @ (solve_1 @ x) @ (f @ (pred @ x))))).
+%% ?- compile(k @ (int_to_str @ (solve @ limit))).
+
+%% -------- core
+
+:- op(1000, xfy, ->).
+:- op(999, yfx, @).
+:- dynamic definition/2.
+
+%% free variable (internal predicate for 't')
+free(X, X).
+free(L @ R, X) :- free(L, X); free(R, X).
+free(X -> Body, Y) :- X \= Y, free(Body, Y).
+
+%% lambda -> combinator (T[]-transform)
+t(X -> E @ X, Res) :- \+free(E, X), !, t(E, Res). % 0. eta_reduction
+t(X, X) :- atom(X), !.                            % 1. var
+t(X @ Y, X2 @ Y2) :- !, t(X, X2), t(Y, Y2).       % 2. app
+t(X -> E, k @ E2) :- \+free(E, X), !, t(E, E2).   % 3. abs (K)
+t(X -> X, i) :- !.                                % 4. abs (I)
+t(X -> Y -> E, Res) :- free(E, X), !, t(Y -> E, E2), t(X -> E2, Res). % 5. abs (freevar)
+t(X -> L @ R, s @ L2 @ R2) :- !, t(X -> L, L2), t(X -> R, R2). % 6. abs (S)
+
+%% macro definition
+define(Name, Term) :- assert(definition(Name, Term)).
+
+%% desugarer (string, natural number, list)
+desugar(S, S2) :- string(S), !, string_codes(S, S1), desugar(S1, S2).
+desugar(0, zero) :- !.
+desugar(N, succ @ N2) :- integer(N), !, N1 is N - 1, desugar(N1, N2).
+desugar([], nil) :- !.
+desugar([H|T], cons @ H2 @ T2) :- !, desugar(H, H2), desugar(T, T2).
+desugar(X @ Y, X2 @ Y2) :- !, desugar(X, X2), desugar(Y, Y2).
+desugar(X -> Body, X -> Body2) :- !, desugar(Body, Body2).
+desugar(X, X).
+
+%% macroexpand (NOTE: naive substitution)
+macroexpand(Expr, Res) :- definition(Expr, Def), !, macroexpand(Def, Res).
+macroexpand(X @ Y, X2 @ Y2) :- !, macroexpand(X, X2), macroexpand(Y, Y2).
+macroexpand(X -> Body, X -> Body2) :- !, macroexpand(Body, Body2).
+macroexpand(X, X).
+
+%% prettyprinter (in unlambda format)
+pp(X @ Y) :- put_char('`'), pp(X), pp(Y), !.
+pp(X) :- print(X).
+
+%% compile and print
+compile(Expr) :-
+    desugar(Expr, Expr1),
+    macroexpand(Expr1, Expr2),
+    (Expr == Expr2 -> t(Expr2, Expr3), pp(Expr3); compile(Expr2)).
+
+%% -------- prelude
+
+%% higher order
+definition(fix, f -> (x -> f @ (x @ x)) @ (x -> f @ (x @ x))).
+definition(compose, f -> g -> x -> f @ (g @ x)).
+
+%% boolean
+definition(true, x -> y -> x).
+definition(false, x -> y -> y).
+definition(if, c -> t -> f -> c @ t @ f).
+definition(not, x -> if @ x @ false @ true).
+definition(and, x -> y -> if @ x @ y @ false).
+definition(or, x -> y -> if @ x @ true @ y).
+definition(xor, x -> y -> if @ x @ (not @ y) @ y).
+
+%% list
+definition(nil, f -> true).
+definition(cons, a -> b -> f -> f @ a @ b).
+definition(car, x -> x @ true).
+definition(cdr, x -> x @ false).
+definition(null, l -> l @ (x -> y -> false)).
+definition(nthcdr, x -> n -> (cdr @ (n @ cdr) @ lst)).
+definition(nth, x -> n -> (car @ (n @ cdr) @ lst)).
+definition(map, fix @ (f -> fn -> l -> if @ (null @ l) @ nil @ [fn @ (car @ l) | f @ fn @ (cdr @ l)])).
+definition(append, fix @ (f -> a -> b -> if @ (null @ a @ b @ [car @ a | f @ (cdr @ a) @ b]))).
+definition(reverse, (r -> l -> r @ l @ nil) @ (fix @ (f -> a -> b -> if @ (null @ a) @ b @ (f @ (cdr @ a) @ [car @ a | b])))).
+
+%% numeric
+definition(zero, false).
+definition(succ, n -> f -> x -> f @ (n @ f @ x)).
+definition(pred, n -> f -> x -> n @ (g -> h -> h @ (g @ f)) @ (y -> x) @ (y -> y)).
+definition(add, n -> m -> n @ succ @ m).
+definition(sub, n -> m -> m @ pred @ n).
+definition(mult, n -> m -> n @ (add @ m) @ 0).
+definition(exp, n -> m -> m @ (mult @ n) @ 1).
+definition(zerop, n -> n @ (x -> false) @ true).
+definition(ge, n -> m -> zerop @ (sub @ m @ n)).
+definition(gt, n -> m -> and @ (ge @ n @ m) @ (not @ (ge @ n @ (succ @ m)))).
+definition(eq, n -> m -> and @ (ge @ n @ m) @ (ge @ m @ n)).
+definition(neq, n -> m -> not @ (eq @ n @ m)).
+definition(le, n -> m -> ge @ m @ n).
+definition(lt, n -> m -> gt @ m @ n).
+definition(mod, fix @ (f -> a -> b -> if @ (ge @ a @ b) @ (f @ (sub @ a @ b) @ b) @ a)).
+definition(div, fix @ (f -> a -> b -> if @ (ge @ a @ b) @ (succ @ (f @ (sub @ a @ b) @ b)) @ zero)).
+
+%% int -> string
+definition(forty_eight, mult @ 3 @ ((x -> x @ x @ x) @ 2)).
+definition(nine, exp @ 3 @ 2).
+definition(ten, mult @ 2 @ 5).
+definition(int_to_str, x -> reverse @ (fix @ (f -> x -> if @ (le @ x @ nine) @ [add @ x @ forty_eight] @ [add @ (mod @ x @ ten) @ forty_eight | f @ (div @ x @ ten)]) @ x)).
