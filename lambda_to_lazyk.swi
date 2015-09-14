@@ -35,7 +35,7 @@
 
 %% [example1 : Hello World]
 %%
-%% ?- compile(k @ (reverse @ "!dlroW ,olleH")).
+%% ?- compile(x -> reverse @ "!dlroW ,olleH").
 
 %% [example2 : Lazy K solution for Project Euler #001]
 %%
@@ -43,7 +43,7 @@
 %% ?- define(limit, mult @ thirty_seven @ ((x -> x @ x) @ 3)). % equals to 999 "
 %% ?- define(solve_1, x -> if @ (zerop @ (mult @ (mod @ x @ 3) @ (mod @ x @ 5))) @ x @ 0).
 %% ?- define(solve, fix @ (f -> x -> if @ (zerop @ x) @ 0 @ (add @ (solve_1 @ x) @ (f @ (pred @ x))))).
-%% ?- compile(k @ (int_to_str @ (solve @ limit))).
+%% ?- compile(x -> int_to_str @ (solve @ limit)).
 
 %% -------- core
 
