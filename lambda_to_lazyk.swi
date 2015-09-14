@@ -118,7 +118,7 @@ definition(nullp, l -> l @ (x -> y -> false)).
 definition(nthcdr, x -> n -> (cdr @ (n @ cdr) @ lst)).
 definition(nth, x -> n -> (car @ (n @ cdr) @ lst)).
 definition(map, fix @ (f -> fn -> l -> if @ (nullp @ l) @ nil @ [fn @ (car @ l) | f @ fn @ (cdr @ l)])).
-definition(append, fix @ (f -> a -> b -> if @ (nullp @ a @ b @ [car @ a | f @ (cdr @ a) @ b]))).
+definition(append, fix @ (f -> a -> b -> if @ (nullp @ a) @ b @ [car @ a | f @ (cdr @ a) @ b])).
 definition(reverse, (r -> l -> r @ l @ nil) @ (fix @ (f -> a -> b -> if @ (nullp @ a) @ b @ (f @ (cdr @ a) @ [car @ a | b])))).
 
 %% numeric
