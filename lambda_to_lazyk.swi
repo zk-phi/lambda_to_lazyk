@@ -1,4 +1,4 @@
-%% Lambda Calculus to Lazy K translator (2015 zk_phi)
+%% Lambda Calculus to Lazy K translator in Prolog (2015 zk_phi)
 
 %% [syntax]
 %%
@@ -66,7 +66,7 @@ t(X -> Y -> E, Res) :- free(E, X), !, t(Y -> E, E2), t(X -> E2, Res). % 5. abs (
 t(X -> L @ R, s @ L2 @ R2) :- !, t(X -> L, L2), t(X -> R, R2). % 6. abs (S)
 
 %% macro definition
-define(Name, Term) :- assert(definition(Name, Term)).
+define(Name, Term) :- asserta(definition(Name, Term)).
 
 %% desugarer (string, natural number, list)
 desugar(S, S2) :- string(S), !, string_codes(S, S1), desugar(S1, S2).
