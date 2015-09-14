@@ -23,7 +23,7 @@
 %% [predefined macros]
 %%
 %% - boolean : true, false, if, not, and, or, xor
-%% - list    : nil, cons, car, cdr, null, nthcdr, nth, map, append, reverse
+%% - list    : nil, cons, car, cdr, nullp, nthcdr, nth, map, append, reverse
 %% - numeric : zero, succ, pred, add, sub, mult, exp, zerop, ge, gt, eq, neq, le, lt, mod, div
 %% - others  : fix [= Y combinator], compose, int_to_str
 
@@ -114,12 +114,12 @@ definition(nil, f -> true).
 definition(cons, a -> b -> f -> f @ a @ b).
 definition(car, x -> x @ true).
 definition(cdr, x -> x @ false).
-definition(null, l -> l @ (x -> y -> false)).
+definition(nullp, l -> l @ (x -> y -> false)).
 definition(nthcdr, x -> n -> (cdr @ (n @ cdr) @ lst)).
 definition(nth, x -> n -> (car @ (n @ cdr) @ lst)).
-definition(map, fix @ (f -> fn -> l -> if @ (null @ l) @ nil @ [fn @ (car @ l) | f @ fn @ (cdr @ l)])).
-definition(append, fix @ (f -> a -> b -> if @ (null @ a @ b @ [car @ a | f @ (cdr @ a) @ b]))).
-definition(reverse, (r -> l -> r @ l @ nil) @ (fix @ (f -> a -> b -> if @ (null @ a) @ b @ (f @ (cdr @ a) @ [car @ a | b])))).
+definition(map, fix @ (f -> fn -> l -> if @ (nullp @ l) @ nil @ [fn @ (car @ l) | f @ fn @ (cdr @ l)])).
+definition(append, fix @ (f -> a -> b -> if @ (nullp @ a @ b @ [car @ a | f @ (cdr @ a) @ b]))).
+definition(reverse, (r -> l -> r @ l @ nil) @ (fix @ (f -> a -> b -> if @ (nullp @ a) @ b @ (f @ (cdr @ a) @ [car @ a | b])))).
 
 %% numeric
 definition(zero, false).
