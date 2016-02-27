@@ -21,7 +21,7 @@ and give a lambda expresssion to the ~compile~ pred.
 
   - lists   :: ~[x, y, ...]~ = ~cons @ x @ (cons @ y @ ... nil)~
   - numbers :: ~4~ = ~succ @ (succ @ (succ @ (succ @ zero)))~
-  - strings :: ~\"abc\"~ = ~[97, 98, 99]~
+  - strings :: ~​"abc"​~ = ~[97, 98, 99]~
 
 ** Built-in macros
 
