@@ -39,11 +39,13 @@ macroexpand(X @ Y, X2 @ Y2) :- !, macroexpand(X, X2), macroexpand(Y, Y2).
 macroexpand(X -> Body, X -> Body2) :- !, macroexpand(Body, Body2).
 macroexpand(X, X).
 
-%% prettyprinter (in unlambda format)
-%% pp(X @ Y) :- put_char('`'), pp(X), pp(Y), !.
-%% pp(X) :- print(X).
+%% prettyprinter (combinator format)
 pp(X @ Y) :- !, pp(X), put_char('('), pp(Y), put_char(')').
-pp(X) :- print(X).
+pp(X) :- atom_string(X, S1), string_upper(S1, S2), write(S2).
+
+%% prettyprinter (unlambda format)
+%% pp(X @ Y) :- !, put_char('`'), pp(X), pp(Y).
+%% pp(X) :- print(X).
 
 %% compile and print
 compile(Expr) :-
