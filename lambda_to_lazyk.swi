@@ -1,50 +1,5 @@
 %% Lambda Calculus to Lazy K translator in Prolog (2015 zk_phi)
 
-%% [syntax]
-%%
-%%  M := X '->' M  ... abstraction (right associative)
-%%     | M '@' M   ... application (left associative)
-
-%% [compiling lambda terms to Lazy K]
-%%
-%% ?- compile(x -> y -> y @ x).
-%% ``s`k`sik
-%% true.
-
-%% [defining/calling macros]
-%%
-%% ?- define(twice, f -> x -> f @ (f @ x)).
-%% true.
-%%
-%% ?- compile(twice @ (x -> x) @ (x -> y -> y @ x)).
-%% ````s``s`kskii``s`k`sik
-%% true.
-
-%% [predefined macros]
-%%
-%% - boolean : true, false, if, not, and, or, xor
-%% - list    : nil, cons, car, cdr, nullp, nthcdr, nth, map, append, reverse
-%% - numeric : zero, succ, pred, add, sub, mult, exp, zerop, ge, gt, eq, neq, le, lt, mod, div
-%% - others  : fix [= Y combinator], compose, int_to_str
-
-%% [syntactic sugars]
-%%
-%% - list notation   : [M1, M2, ...] = cons @ M1 @ (cons @ M2 @ ... nil)
-%% - natural numbers : 4 = succ @ (succ @ (succ @ (succ @ zero)))
-%% - strings         : "abc" = [97, 98, 99]
-
-%% [example1 : Hello World]
-%%
-%% ?- compile(x -> reverse @ "!dlroW ,olleH").
-
-%% [example2 : Lazy K solution for Project Euler #001]
-%%
-%% ?- define(thirty_seven, succ @ (exp @ (mult @ 2 @ 3) @ 2)). % equals to 37 but optimized in code size
-%% ?- define(limit, mult @ thirty_seven @ ((x -> x @ x) @ 3)). % equals to 999 "
-%% ?- define(solve_1, x -> if @ (zerop @ (mult @ (mod @ x @ 3) @ (mod @ x @ 5))) @ x @ 0).
-%% ?- define(solve, fix @ (f -> x -> if @ (zerop @ x) @ 0 @ (add @ (solve_1 @ x) @ (f @ (pred @ x))))).
-%% ?- compile(x -> int_to_str @ (solve @ limit)).
-
 %% -------- core
 
 :- op(1000, xfy, ->).
@@ -85,7 +40,9 @@ macroexpand(X -> Body, X -> Body2) :- !, macroexpand(Body, Body2).
 macroexpand(X, X).
 
 %% prettyprinter (in unlambda format)
-pp(X @ Y) :- put_char('`'), pp(X), pp(Y), !.
+%% pp(X @ Y) :- put_char('`'), pp(X), pp(Y), !.
+%% pp(X) :- print(X).
+pp(X @ Y) :- !, pp(X), put_char('('), pp(Y), put_char(')').
 pp(X) :- print(X).
 
 %% compile and print
@@ -143,4 +100,4 @@ definition(div, fix @ (f -> a -> b -> if @ (ge @ a @ b) @ (succ @ (f @ (sub @ a 
 definition(forty_eight, mult @ 3 @ ((x -> x @ x @ x) @ 2)).
 definition(nine, exp @ 3 @ 2).
 definition(ten, mult @ 2 @ 5).
-definition(int_to_str, x -> reverse @ (fix @ (f -> x -> if @ (le @ x @ nine) @ [add @ x @ forty_eight] @ [add @ (mod @ x @ ten) @ forty_eight | f @ (div @ x @ ten)]) @ x)).
+definition(int_to_str, x -> reverse @ (fix @ (f -> x -> [add @ (mod @ x @ 10) @ forty_eight | if @ (le @ x @ nine) @ [] @ (f @ (div @ x @ ten))]) @ x)).
