@@ -8,7 +8,7 @@ Run the translator with
 and give a lambda expresssion to the ~compile~ pred.
 
 : ?- compile(x -> y -> y @ x).
-: ``s`k`sik
+: S(K(S(I)))(K)
 
 ** Syntax
 
@@ -54,7 +54,7 @@ Define macros with ~define~ pred
 so that you can use the definition in the expressions.
 
 : ?- compile(twice @ (x -> x) @ (x -> y -> y @ x)).
-: ````s``s`kskii``s`k`sik
+: S(S(K(S))(K))(I)(I)(S(K(S(I)))(K))
 
 ** Examples
 *** Hello World
